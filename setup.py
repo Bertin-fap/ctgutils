@@ -12,7 +12,7 @@ install_requires = open(path.join(this_directory, 'requirements.txt'), encoding=
 
 # This setup is suitable for "python setup.py develop".
 
-setup(name='CTG_Utils',
+setup(name='ctgutils',
       version='1.2.2',
       description='A toolbox for ctg statistics analysis',
       long_description=long_description,
@@ -31,6 +31,6 @@ setup(name='CTG_Utils',
       install_requires = install_requires,
       author= 'f. bertin',
       author_email= 'francois.bertin7@wanadoo.fr',
-      url= 'https://github.com/Bertin-fap/CTG_Utils ',
+      url= 'https://github.com/Bertin-fap/ctgutils ',
       packages=['ctgutils\ctgfuncts','ctgutils\ctggui'],
       )
