@@ -4,7 +4,7 @@ __all__ = ['built_lat_long',
            'get_sejour_info',
            'parse_date',
           ]
-          
+
 # Standard library imports
 import itertools
 import os

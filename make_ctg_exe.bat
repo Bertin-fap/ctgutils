@@ -24,29 +24,21 @@ set PATH=%VIRTUAL_ENV%\Scripts;%PATH%
 
 
 :: builds the CTG_METER python program
-set "PGM=%TEMP%\CTG_exe\CTG_METER.py"
-echo from CTG_Utils.CTG_GUI import AppMain > %PGM%
+set "PGM=%TEMP%\CTG_exe\CTG_METER.py"#
+echo from ctgutils.ctggui import AppMain > %PGM%
 echo app_main = AppMain() >> %PGM%
 echo app_main.mainloop() >> %PGM%
 
 :: install packages
-
-pip install CTG_Utils
+pip install git+https://github.com/Bertin-fap/ctgutils.git#egg=ctgutils
+::pip install %userprofile%\pyvenv\ctgutils
 pip install auto-py-to-exe
-
-:: remote the directories buib and dist
-:: set the directories buid and dist used when making the executable
-
-set "BUILD=%TEMP%\CTG_exe\build"
-set "DIST=%TEMP%\CTG_exe\dist"
-rmdir /s /q %BUILD%
-rmdir /s /q %DIST%
 
 :: set the default directories
 :: ICON contains the icon file with the format.ico
 :: PGM contain the application lauch python program
 
-set "ICON=%TEMP%/CTG_exe/venv/Lib/site-packages/ctgutils/CTG_Func/CTG_RefFiles/logoctg4.ico"
+set "ICON=%TEMP%/CTG_exe/venv/Lib/site-packages/ctgutils/ctgfuncts/CTG_RefFiles/logoctg4.ico"
 set "DATA=%TEMP%/CTG_exe/venv/Lib/site-packages/ctgutils;ctgutils/"
 
 :: make the executable 
@@ -55,6 +47,10 @@ pyinstaller --noconfirm --onefile --console^
  --add-data "%DATA%"^
  "%PGM%"
  
+:: remove the directories build
+set "BUILD=%TEMP%\CTG_exe\build"
+rmdir /s /q %BUILD%
+
 :: rename the directory dist to aaaa_mm_jj BiblioMeter 
 :: adapted from http://stackoverflow.com/a/10945887/1810071
 for /f "skip=1" %%x in ('wmic os get localdatetime') do if not defined MyDate set MyDate=%%x
@@ -69,13 +65,16 @@ ren %TEMP%\CTG_exe\%dirname%\CTG_METER.exe %new_file_name%
 echo %new_file_name% is located in %TEMP%\CTG_exe\%dirname% 
 
 :: Copy Exe
+set input_file=%TEMP%\CTG_exe\%dirname%\%dirname%.exe%
 set /p "rep=do you want to copy this file in a folder (y/n) : "
 if NOT %rep%==y GOTO FIN
-set /p "new_dir=enter the full path of the folder : "
-set input_file=%TEMP%\CTG_exe\%dirname%\%dirname%.exe%
+set /p "rep1=do you use %userprofile%\CTG (y/n) : "
+if NOT %rep%==y GOTO A
+copy  %input_file% %userprofile%\CTG
+GOTO FIN
+A: set /p "new_dir=enter the full path of the folder : "
 set output_file=%new_dir%\%dirname%.exe%
 copy  %input_file% %output_file%
-echo copy %input_file% %output_file%
 :FIN
 
 pause

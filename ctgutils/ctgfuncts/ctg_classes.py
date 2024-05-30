@@ -10,17 +10,17 @@ import numpy as np
 import pandas as pd
 
 # Internal imports
-from ctgutils.ctgfuncts.ctg_tools import built_lat_long  
+from ctgutils.ctgfuncts.ctg_tools import built_lat_long
 
 class EffectifCtg():
-    
-    
+
+
     def __init__(self,year,ctg_path):
-        
+
         self.year = year
         self.ctg_path = ctg_path
         df = pd.read_excel(self.ctg_path / Path(str(year))/ Path('DATA')/Path(str(year)+'.xlsx'))
-        
+
         year_1 = int(year)-1
         df_1 = pd.read_excel(self.ctg_path / Path(str(year_1))/ Path('DATA')/Path(str(year_1)+'.xlsx'))
 
@@ -33,20 +33,20 @@ class EffectifCtg():
         df,dh = built_lat_long(df)
 
         df['distance'] = df.apply(lambda row: self.distance_(row, dh),axis=1)
-        
+
         self.effectif = df      # effectif year
         self.effectif_1 = df_1  # effectif year moins un
 
         self.moy_age_entrants, self.nbr_nouveaux_licencié, self.nouveaux_licenciés_noms = self.nouveaux_entrants()
-        self.moy_age_sortants, self.nbr_sortants, self.sortants_noms = self.sortants() 
-        
+        self.moy_age_sortants, self.nbr_sortants, self.sortants_noms = self.sortants()
+
         self.cotisation_licence,self.cotisation_totale, self.cotisation_ctg = self.cotisation()
-        
+
         self.membres_sympathisants, self.nbr_membres_sympathisants = self.membres_sympathisants()
-        
+
     @staticmethod
     def distance_(row,dh):
-        
+
         phi1, lon1 = dh.query("Ville=='GRENOBLE'")[['long','lat']].values.flatten()
         phi1, lon1 = radians(phi1), radians(lon1)
         phi2, lon2 = radians(row['long']), radians(row['lat'])
@@ -54,7 +54,7 @@ class EffectifCtg():
         dist = 2 * rad * asin(sqrt(sin((phi2 - phi1) / 2) ** 2
                                  + cos(phi1) * cos(phi2) * sin((lon2 - lon1) / 2) ** 2))
         return np.round(dist,1)
-    
+
     def stat(self):
 
         da = self.effectif.groupby('Sexe')['Age'].agg(['count','median','max','min'])
@@ -79,19 +79,19 @@ class EffectifCtg():
         stat.append(f"Age minimum des femmes : {round(da.loc['F','min'],1)} ans")
         stat.append(f"Age minimum des hommes : {round(da.loc['M','min'],1)} ans")
         stat.append(' ')
-        
-        
-        stat.append(f'Nombre de membres sympatisant : {self.nbr_membres_sympathisants}')  
+
+
+        stat.append(f'Nombre de membres sympatisant : {self.nbr_membres_sympathisants}')
         stat.append(f'Membres sympatisants : {self.membres_sympathisants}')
         stat.append(' ')
-        
-        
+
+
         stat.append(f"{self.nbr_nouveaux_licencié} nouveaux licenciés de moyenne d'âge de {round(self.moy_age_entrants,1)} ans")
         stat.append(f"Liste des nouveaux :\n{self.nouveaux_licenciés_noms}")
         stat.append(f"{self.nbr_sortants} licences non renouvellées de moyenne d'âge de {round(self.moy_age_sortants,1)} ans")
         stat.append(f"Liste des sortants :\n{self.sortants_noms}")
         stat.append(' ')
-        
+
         if 'Pratique VAE' in self.effectif.columns:
             da = self.effectif.groupby(['Sexe','Pratique VAE'])['Nom'].agg(['count'])
             nbr_vae_femme = nbr_femmes-da.loc['F','Non']['count']
@@ -100,13 +100,13 @@ class EffectifCtg():
             stat.append(f"Nombre de membres équippées de VAE : {nbr_vae_tot} ({round(100*nbr_vae_tot/nbr_membres,1)} %)")
             stat.append(f"Nombre de femmes équippées de VAE : {nbr_vae_femme} ({round(100*nbr_vae_femme/nbr_femmes,1)} %)")
             stat.append(f"Nombre d'hommes équippés de VAE: {nbr_vae_homme} ({round(100*nbr_vae_homme/nbr_hommes)} %)")
-        
-        stat.append(' ')    
+
+        stat.append(' ')
         da = self.effectif.groupby(['Discipline'])['Nom'].agg('count')
         for pratique in da.index:
             stat.append(f'{pratique} : {da[pratique]}')
         stat.append(' ')
-        
+
         self.effectif = self.effectif.rename(columns={'\n\t\t\t\tAbonnements':'Abonnements'})
         nbr_abonnements = len(self.effectif.query('Abonnements == "Oui"'))
         stat.append(f"Nombre d'abonnés à la revue FFCT : {nbr_abonnements} ({round(100*nbr_abonnements/nbr_membres)} %)")
@@ -117,19 +117,19 @@ class EffectifCtg():
         stat.append(f"\n Ces information sont disponibles dans le fichier : \n{path_info_effectif}")
         stat ='\n'.join(stat)
         messagebox.showinfo(f'Statistique {self.year}',stat)
-        
-        
+
+
         with open(path_info_effectif,'w') as f:
             f.write(stat)
-        
+
     def nouveaux_entrants(self):
         nouveaux_licenciés_id = set(self.effectif["N° Licencié"])- \
                                 set(self.effectif_1["N° Licencié"])
-        
-        
+
+
         dg = self.effectif[self.effectif['N° Licencié'].isin(nouveaux_licenciés_id)]
         moy_age_entrants = dg['Age'].mean() + 1
-        
+
         nouveaux_licenciés_list = []
         for idx,row in dg.iterrows():
             nouveaux_licenciés_list.append(f"{row['Prénom'][0]}. {row['Nom']}")
@@ -137,9 +137,9 @@ class EffectifCtg():
         nbr_nouveaux_licencié = len(dg)
 
         return moy_age_entrants, nbr_nouveaux_licencié, nouveaux_licenciés_noms
-        
+
     def membres_sympathisants(self):
-           
+
         file_path = self.ctg_path / Path(str(self.year))/Path('DATA')/ Path('membres_sympatisants.xlsx')
         if os.path.isfile(file_path):
             membres_sympathisants_df = pd.read_excel(file_path)
@@ -149,16 +149,16 @@ class EffectifCtg():
         else:
             nbr_membres_sympathisants = 'inconnu'
             membres_sympathisants = 'inconnu'
-            
+
         return membres_sympathisants, nbr_membres_sympathisants
 
     def sortants(self):
         sortants_id = set(self.effectif_1["N° Licencié"]) - set(self.effectif["N° Licencié"])
-        
+
         dg = self.effectif_1[self.effectif_1['N° Licencié'].isin(sortants_id)]
-        
+
         moy_age_sortants = dg['Age'].mean() + 1
-        
+
         sortants_list = []
         for idx,row in dg.iterrows():
             sortants_list.append(f"{row['Prénom'][0]}. {row['Nom']}")
@@ -166,30 +166,29 @@ class EffectifCtg():
         nbr_sortants = len(dg)
 
         return moy_age_sortants, nbr_sortants, sortants_noms
-        
+
     def cotisation(self):
         cotisation_licence = 'inconnue'
         if 'Cotisation Licence' in self.effectif.columns:
             cotisation_licence = sum(self.effectif['Cotisation Licence'])
-            
+
         cotisation_totale = 'inconnue'
         if 'Cotisation Totale' in self.effectif.columns:
             cotisation_totale = sum(self.effectif['Cotisation Totale'])
-        
+
         cotisation_ctg = 15*len(self.effectif)
         return cotisation_licence,cotisation_totale, cotisation_ctg
-        
- 
+
+
     def plot_histo(self):
-    
+
         fig, ax = plt.subplots(figsize=(10,10))
         self.effectif['age group'] = pd.cut(self.effectif.Age, bins=range(0, 95, 5), right=False)
         result_hist = self.effectif.groupby('Sexe')['age group'].value_counts().unstack().T.plot.bar(width=1, stacked=False,ax=ax)
-        
+
         plt.tick_params(axis='x', labelsize=20)
         plt.tick_params(axis='y', labelsize=20)
         plt.title(self.year,fontsize=20)
         plt.legend()
         plt.tight_layout()
         plt.show()
-        
